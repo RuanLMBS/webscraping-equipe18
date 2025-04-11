@@ -3,10 +3,10 @@ import os
 from pathlib import Path
 from urllib.parse import unquote,urlsplit
 import fitz  # PyMuPDF
+import pdfplumber
 from scraping import parse_ufsm,parse_sebrae
 
 link = parse_sebrae()
-
 
 def baixar_arquivo(url_pdf: str, nome_arquivo: str = None):
     """
@@ -42,6 +42,36 @@ def baixar_arquivo(url_pdf: str, nome_arquivo: str = None):
     except Exception as e:
         print(f"Erro ao baixar o arquivo: {e}")
 #baixar_arquivo(link)
+
+#def ler_pdf(caminho_pdf):
+caminho_pdf = r'C:\Users\Ulle-\Downloads\Edital-06-2025-Bolsista-NPV-Comunicacao.pdf'
+
+"""with pdfplumber.open(caminho_pdf) as pdf: ESSE  AQUI TA RETORNANDO O PDF INTEIRO!
+    texto_completo = ""
+    for pagina in pdf.pages:
+        texto_completo += pagina.extract_text() + "\n"
+
+print(texto_completo.encode("utf-8").decode("utf-8"))"""
+    
+def extrair_competencias(caminho):
+    texto_completo = ""
+
+    with pdfplumber.open(caminho) as pdf:
+        for pagina in pdf.pages:
+            texto = pagina.extract_text()
+            if texto:
+                texto_completo += texto + "\n"
+                
+    inicio = texto_completo.lower().find("dos requisitos básicos")
+    fim = texto_completo.lower().find("período de vigência")
+
+    if inicio != -1 and fim != -1:
+        competencias = texto_completo[inicio:fim]
+        return competencias.strip()
+    else:
+        return "Seção de competências não encontrada."
+
+print(extrair_competencias(caminho_pdf))
 '''if pdf_url:
     response = requests.get(pdf_url)
 
