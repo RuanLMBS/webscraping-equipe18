@@ -21,6 +21,6 @@ def get_editais_ufsm():
 def extrair_competencias_ufsm(url:str):
     try:
         conteudo = extrair_competencias(url)
-        return {"Conteudo: ": conteudo}
+        return {conteudo}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
