@@ -3,7 +3,9 @@ import re
 import requests
 
 def limpar_titulo(titulo):
-    return re.sub(r'^\s*\d{2}/\d{4}\s*-?\s*', '', titulo).strip()
+    titulo = re.sub(r'^\s*\d{2}/\d{4}\s*-?\s*', '', titulo)
+    titulo = re.sub(r'^[-–—]\s*', '', titulo)
+    return titulo.strip()
 
 def parse_ufsm():
     url = 'https://www.ufsm.br/pro-reitorias/proinova/busca?q=&sites%5B%5D=399&area=editais&orderby=date&tags='
@@ -25,10 +27,26 @@ def parse_ufsm():
         url_edital = link_elemento["href"]
         titulo =  limpar_titulo(link_elemento.text.strip())
 
-        editais.append({
-            "titulo":titulo,
-            "url":url
-        })
+        try:
+            pagina_edital = requests.get(url_edital)
+            soup_pagina_edital = BeautifulSoup(pagina_edital.text,'lxml')
+
+            div_edital = soup_pagina_edital.find(class_="edital-tr-abertura")
+            url_pdf = None
+
+            if div_edital:
+                link_pdf = div_edital.find("a", href=True)
+                if link_pdf:
+                    url_pdf = link_pdf["href"]
+
+                editais.append({
+                    "titulo":titulo,
+                    "url":url_pdf   
+                })
+        except Exception as e:
+            print(f"Erro ao processar o edital {url_edital}: {e}")
+    
+    return editais
     
 """links_detalhes = [elemento.find("a")["href"] for elemento in elementos if elemento.find("a")]
     pdf_links = []
