@@ -3,12 +3,12 @@ import requests
 from io import BytesIO
 import re
 
-def encontrar_indice(texto: str, padroes: list) -> int:
+def encontrar_indices(texto: str, padroes: list) -> list:
+    indices = []
     for padrao in padroes:
-        idx = texto.find(padrao.lower())
-        if idx != -1:
-            return idx
-    return -1
+        for match in re.finditer(padrao, texto, re.IGNORECASE):
+            indices.append(match.start())
+    return sorted(indices)
 
 def extrair_competencias(url: str) -> str:
     response = requests.get(url)
@@ -23,7 +23,6 @@ def extrair_competencias(url: str) -> str:
             else:
                 print("[Página sem texto extraído]")
 
-    # Certifique-se de que os termos estão em minúsculas
     texto_lower = texto_completo.lower()
 
     padroes_inicio = [
@@ -33,8 +32,7 @@ def extrair_competencias(url: str) -> str:
         "requisitos exigidos",
         "requisitos e compromissos",
         "requisitos",
-        r"\d+\.\s*requisitos",
-        "CRITÉRIOS DE SELEÇÃO"
+        "características e critérios"
     ]
 
     padroes_fim = [
@@ -42,21 +40,22 @@ def extrair_competencias(url: str) -> str:
         "dos projetos",
         "da inscrição",
         "das indicações",
-        "documentação exigida"
+        "documentação exigida",
+        "cronograma"
     ]
 
-    #inicio = texto_lower.find("dos requisitos")
-    #fim = texto_lower.find("período de vigência da bolsa")
+    inicios = encontrar_indices(texto_lower, padroes_inicio)
+    fins = encontrar_indices(texto_lower, padroes_fim)
 
-    inicio = encontrar_indice(texto_lower, padroes_inicio)
-    if(inicio):
-        print(texto_lower)
-    fim = encontrar_indice(texto_lower, padroes_fim)
+    print("Índices de início encontrados:", inicios)
+    print("Índices de fim encontrados:", fins)
 
+    # Encontra o primeiro par válido onde inicio < fim
+    for inicio in inicios:
+        for fim in fins:
+            if inicio < fim:
+                trecho = texto_completo[inicio:fim]
+                print("[Trecho encontrado]:", trecho[:300], "...")
+                return trecho.strip()
 
-    if inicio != -1 and fim != -1:
-        competencias = texto_completo[inicio:fim]
-        print (competencias)
-        return competencias.strip()
-    else:
-        return "Seção não encontrada"
+    return "Seção não encontrada"
